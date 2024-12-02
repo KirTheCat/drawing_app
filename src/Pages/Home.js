@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Switch, FormControlLabel } from '@mui/material';
-import { connectSocket, sendMessage, closeSocket } from '../websocket/WebSocket';
+import { connectSocket, sendMessage, isSocketConnected } from '../websocket/WebSocket';
 
 function Home() {
     const [userName, setUserName] = useState('');
@@ -11,21 +11,25 @@ function Home() {
     const navigate = useNavigate();
 
     const createRoom = () => {
-        connectSocket(
-            'ws://localhost:8080/drawing',
-            () => {
-                sendMessage({ type: 'createRoom', userName, roomName });
-            },
-            (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'roomCreated' && data.status === 'success') {
-                    navigate(`/room/${data.roomId}`, { state: { userName, roomName, action: 'create' } });
-                } else {
-                    alert(data.message);
-                }
-            },
-            () => {}
-        );
+        if (!isSocketConnected()) {
+            connectSocket(
+                'ws://localhost:8080/drawing',
+                () => {
+                    sendMessage({ type: 'createRoom', userName, roomName });
+                },
+                (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'roomCreated' && data.status === 'success') {
+                        navigate(`/room/${data.roomId}`, { state: { userName, roomName, action: 'create' } });
+                    } else {
+                        alert(data.message);
+                    }
+                },
+                () => {}
+            );
+        } else {
+            sendMessage({ type: 'createRoom', userName, roomName });
+        }
     };
 
     const joinRoom = () => {

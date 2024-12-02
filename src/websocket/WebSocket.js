@@ -54,4 +54,6 @@ const off = (eventType, handler) => {
     }
 };
 
-export { connectSocket, sendMessage, closeSocket, on, off };
+const isSocketConnected = () => socketConnected;
+
+export { connectSocket, sendMessage, closeSocket, on, off, isSocketConnected };
