@@ -1,4 +1,4 @@
-
+//DrawingTools.js:
 export const getLineCoordinates = (x, y, prevX, prevY) => {
     const dx = Math.abs(x - prevX);
     const dy = Math.abs(y - prevY);

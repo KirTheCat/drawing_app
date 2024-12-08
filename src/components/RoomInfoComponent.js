@@ -1,7 +1,9 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+//RoomInfoComponent.js:
 
-function RoomInfoComponent({ userName, roomId, currentRoomName, hostName }) {
+import React from 'react';
+import {Box, Typography} from '@mui/material';
+
+function RoomInfoComponent({userName, roomId, currentRoomName, hostName}) {
     return (
         <Box>
             <Typography variant="h4" gutterBottom>
@@ -12,6 +14,9 @@ function RoomInfoComponent({ userName, roomId, currentRoomName, hostName }) {
             </Typography>
             <Typography variant="subtitle1" gutterBottom>
                 Хост: {hostName}
+            </Typography>
+            <Typography variant="subtitle1" gutterBottom>
+                Вы авторизованы,как: {userName}
             </Typography>
         </Box>
     );

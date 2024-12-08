@@ -11,20 +11,18 @@ const connectSocket = (url, onOpen, onMessage, onClose) => {
 
     socket.onopen = () => {
         socketConnected = true;
-        if (onOpen) onOpen();
+        onOpen?.();
     };
 
     socket.onmessage = (event) => {
-        if (onMessage) onMessage(event);
+        onMessage?.(event);
         const data = JSON.parse(event.data);
-        if (eventHandlers[data.type]) {
-            eventHandlers[data.type].forEach(handler => handler(data));
-        }
+        eventHandlers[data.type]?.forEach(handler => handler(data));
     };
 
     socket.onclose = () => {
         socketConnected = false;
-        if (onClose) onClose();
+        onClose?.();
     };
 };
 
@@ -42,16 +40,12 @@ const closeSocket = () => {
 };
 
 const on = (eventType, handler) => {
-    if (!eventHandlers[eventType]) {
-        eventHandlers[eventType] = [];
-    }
+    eventHandlers[eventType] = eventHandlers[eventType] || [];
     eventHandlers[eventType].push(handler);
 };
 
 const off = (eventType, handler) => {
-    if (eventHandlers[eventType]) {
-        eventHandlers[eventType] = eventHandlers[eventType].filter(h => h !== handler);
-    }
+    eventHandlers[eventType] = eventHandlers[eventType]?.filter(h => h !== handler);
 };
 
 const isSocketConnected = () => socketConnected;

@@ -1,3 +1,4 @@
+//ToolsMenu.js:
 import React from 'react';
 import {Box, FormControlLabel, Checkbox,  Slider} from '@mui/material';
 import { MuiColorInput } from 'mui-color-input';

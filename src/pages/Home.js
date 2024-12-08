@@ -1,3 +1,4 @@
+// src/pages/Home.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Switch, FormControlLabel } from '@mui/material';
