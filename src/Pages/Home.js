@@ -42,7 +42,7 @@ function Home() {
                 <FormControlLabel
                     control={
                         <Switch
-                            checked={isCreatingRoom}
+                            checked={!isCreatingRoom}
                             onChange={() => setIsCreatingRoom(!isCreatingRoom)}
                             name="roomSwitch"
                             color="primary"

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
-function RoomInfoComponent({ userName, roomId, currentRoomName }) {
+function RoomInfoComponent({ userName, roomId, currentRoomName, hostName }) {
     return (
         <Box>
             <Typography variant="h4" gutterBottom>
@@ -11,7 +11,7 @@ function RoomInfoComponent({ userName, roomId, currentRoomName }) {
                 Идентификатор: {roomId}
             </Typography>
             <Typography variant="subtitle1" gutterBottom>
-                Хост: {userName}
+                Хост: {hostName}
             </Typography>
         </Box>
     );

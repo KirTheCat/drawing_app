@@ -1,48 +1,81 @@
-import React, { useRef, useEffect } from 'react';
-import CanvasDraw from 'react-canvas-draw';
+import React, { useState, useRef, useEffect } from 'react';
+import { Stage, Layer, Line } from 'react-konva';
 import { Box } from '@mui/material';
+import { debounce } from 'lodash';
+import { sendMessage } from "../websocket/WebSocket";
 
-function DrawingBoard({ color, brushRadius, eraserActive, drawingData, onDraw }) {
-    const canvasRef = useRef(null);
+const DrawingBoard = React.forwardRef(({ color, brushRadius, eraserActive, drawingData, onDraw, isConnected, roomId }, ref) => {
+    const [lines, setLines] = useState([]);
+    const isDrawing = useRef(false);
 
     useEffect(() => {
-        if (canvasRef.current) {
-            canvasRef.current.clear();
-            drawingData.forEach((data) => {
-                canvasRef.current.loadSaveData(data, true);
-            });
-        }
+        setLines(drawingData);
     }, [drawingData]);
 
-    const handleDraw = () => {
-        if (typeof onDraw === 'function') {
-            const saveData = canvasRef.current.getSaveData();
-            onDraw(saveData);
+    const debouncedSendMessage = debounce((message) => {
+        if (isConnected) {
+            sendMessage(message);
         }
+    }, 100);
+
+    const handleMouseDown = (e) => {
+        isDrawing.current = true;
+        const stage = e.target.getStage();
+        const point = stage.getPointerPosition();
+        setLines((prevLines) => [...prevLines, { tool: eraserActive ? 'eraser' : 'pen', points: [point.x, point.y], color, brushRadius }]);
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDrawing.current) return;
+        const stage = e.target.getStage();
+        const point = stage.getPointerPosition();
+        const lastLine = lines[lines.length - 1];
+        lastLine.points = lastLine.points.concat([point.x, point.y]);
+        setLines(lines.concat());
+    };
+
+    const handleMouseUp = () => {
+        isDrawing.current = false;
+        const lastLine = lines[lines.length - 1];
+        debouncedSendMessage({ type: 'draw', roomId, drawingData: JSON.stringify(lastLine) });
+        onDraw(lastLine);
     };
 
     return (
         <Box
             sx={{
+                width: '100%',
+                height: '100%',
                 border: '1px solid #ccc',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                width: 800, // фиксированная ширина
-                height: 600  // фиксированная высота
             }}
         >
-            <CanvasDraw
-                ref={canvasRef}
-                brushColor={eraserActive ? '#FFFFFF' : color}
-                brushRadius={brushRadius}
-                canvasWidth={1800} // фиксированная ширина
-                canvasHeight={1600} // фиксированная высота
-                hideGrid
-                onChange={handleDraw}
-            />
+            <Stage
+                width={800}
+                height={900}
+                onMouseDown={handleMouseDown}
+                onMousemove={handleMouseMove}
+                onMouseup={handleMouseUp}
+                ref={ref}
+            >
+                <Layer>
+                    {lines.map((line, i) => (
+                        <Line
+                            key={i}
+                            points={line.points}
+                            stroke={line.tool === 'eraser' ? '#FFFFFF' : line.color}
+                            strokeWidth={line.brushRadius}
+                            tension={0.5}
+                            lineCap="round"
+                            globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
+                        />
+                    ))}
+                </Layer>
+            </Stage>
         </Box>
     );
-}
+});
 
 export default DrawingBoard;
