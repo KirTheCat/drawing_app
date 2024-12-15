@@ -11,9 +11,7 @@ const useDrawing = ({color, brushRadius, eraserActive, onDraw, isConnected, room
     }, [drawingData]);
 
     const debouncedSendMessage = debounce((message) => {
-        if (isConnected) {
             sendMessage(message);
-        }
     }, 100);
 
     const handleMouseDown = (e) => {
