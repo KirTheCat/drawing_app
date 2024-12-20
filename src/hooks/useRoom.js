@@ -1,8 +1,17 @@
-import {useEffect, useRef, useState} from 'react';
+// useRoom.js
+import {useEffect, useRef} from 'react';
 import {useLocation, useParams, useNavigate} from 'react-router-dom';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+    setColor,
+    setBrushRadius,
+    setEraserActive,
+    setCurrentRoomName,
+    setHostName
+} from '../redux/slicers/drawingSlice';
 import useDrawing from '../hooks/useDrawing';
 import {createRoom, joinRoom} from '../websocket/websocketHandlers';
-import {sendMessage} from "../websocket/WebSocket";
+import {closeSocket, sendMessage} from "../websocket/WebSocket";
 
 function useRoom() {
     const {roomId} = useParams();
@@ -10,13 +19,14 @@ function useRoom() {
     const navigate = useNavigate();
     const {userName, roomName, action} = location.state;
 
-    const [color, setColor] = useState('#000000');
-    const [brushRadius, setBrushRadius] = useState(5);
-    const [eraserActive, setEraserActive] = useState(false);
-    const [drawingData, setDrawingData] = useState([]);
-    const [currentRoomName, setCurrentRoomName] = useState(roomName);
-    const [isConnected, setIsConnected] = useState(false);
-    const [hostName, setHostName] = useState('');
+    const dispatch = useDispatch();
+    const color = useSelector((state) => state.drawing.color);
+    const brushRadius = useSelector((state) => state.drawing.brushRadius);
+    const eraserActive = useSelector((state) => state.drawing.eraserActive);
+    const drawingData = useSelector((state) => state.drawing.drawingData);
+    const currentRoomName = useSelector((state) => state.drawing.currentRoomName);
+    const hostName = useSelector((state) => state.drawing.hostName);
+    const isConnected = useSelector((state) => state.drawing.isConnected);
     const stageRef = useRef(null);
 
     const {handleMouseDown, handleMouseMove, handleMouseUp} = useDrawing({
@@ -38,20 +48,20 @@ function useRoom() {
     useEffect(() => {
         console.log('Подключение к комнате', {action, userName, roomName, roomId});
         const disconnect = action === 'create'
-            ? createRoom(userName, roomName, navigate, setDrawingData, setCurrentRoomName, setHostName, drawingData)
-            : joinRoom(userName, roomName, roomId, navigate, setDrawingData, setCurrentRoomName, setHostName, drawingData);
+            ? createRoom(userName, roomName, navigate, (name) => dispatch(setCurrentRoomName(name)), (name) => dispatch(setHostName(name)))
+            : joinRoom(userName, roomName, roomId, navigate, (name) => dispatch(setCurrentRoomName(name)), (name) => dispatch(setHostName(name)));
 
         return () => {
             if (typeof disconnect === 'function') {
                 disconnect();
             }
         };
-    }, [action, userName, roomName, roomId, setIsConnected, setDrawingData, setCurrentRoomName, setHostName, navigate, drawingData]);
-
+    }, [action, userName, roomName, roomId, navigate, dispatch]);
     const handleLeaveRoom = () => {
         if (isConnected) {
             sendMessage({type: 'leaveRoom', roomId, userName});
             navigate('/');
+            closeSocket();
         }
     };
 
@@ -61,16 +71,16 @@ function useRoom() {
         currentRoomName,
         hostName,
         color,
-        setColor,
+        setColor: (color) => dispatch(setColor(color)),
         brushRadius,
-        setBrushRadius,
+        setBrushRadius: (radius) => dispatch(setBrushRadius(radius)),
         eraserActive,
-        setEraserActive,
+        setEraserActive: (active) => dispatch(setEraserActive(active)),
         drawingData,
         handleLeaveRoom,
-        handleMouseUp,
-        handleMouseMove,
         handleMouseDown,
+        handleMouseMove,
+        handleMouseUp,
         isConnected,
         stageRef
     };

@@ -1,4 +1,6 @@
 import {sendMessage, on, off, connectSocket, isSocketConnected} from './WebSocket';
+import {appendDrawingData, setDrawingData} from '../redux/slicers/drawingSlice';
+import store from '../redux/store';
 
 let isConnecting = false;
 
@@ -12,47 +14,43 @@ export const syncDrawingData = (roomId, drawingData, userName) => {
 };
 
 // Общие события
-// Общие события
 const commonEvents = {
-    requestDrawingData: (userName, drawingData) => (data) => {
+    requestDrawingData: (userName) => (data) => {
         console.log('Запрос данных рисования', {receivedData: data});
 
         if (data.userName !== userName) {
+            const drawingData = store.getState().drawing.drawingData;
             syncDrawingData(data.roomId, drawingData, userName);
         }
     },
 
-    syncDrawingData: (setDrawingData) => (data) => {
-        console.log('Синхронизация данных рисования', {receivedData: data});
+    syncDrawingData: () => (data) => {
+        console.log('СИНХРОНИЗАЦИЯ. Полученые данные:', {receivedData: data});
         const drawings = JSON.parse(data.drawingData);
-        setDrawingData(prevData => [...prevData, ...drawings]);
+        store.dispatch(appendDrawingData(drawings));
     },
 
-    broadcastDrawingData: (setDrawingData) => (data) => {
+    broadcastDrawingData: () => (data) => {
         console.log('Трансляция данных рисования', {receivedData: data});
 
         const drawing = JSON.parse(data.drawingData);
         if (drawing?.points) {
-            setDrawingData(prevData => [...prevData, drawing]);
+            store.dispatch(appendDrawingData([drawing]));
         }
     },
 
-    draw: (setDrawingData, roomId, userName) => (data) => {
+    draw: (roomId, userName) => (data) => {
         console.log('Получение данных рисования', {receivedData: data});
 
         const drawing = JSON.parse(data.drawingData);
         if (drawing?.points) {
-            setDrawingData(prevData => {
-                const updatedData = [...prevData, drawing];
-                syncDrawingData(roomId, updatedData, userName); // исправлено
-                return updatedData;
-            });
+            store.dispatch(appendDrawingData([drawing]));
+            syncDrawingData(roomId, store.getState().drawing.drawingData, userName);
             // Трансляция данных рисования другим пользователям
             sendMessage({type: 'broadcastDrawingData', roomId, drawingData: JSON.stringify(drawing)});
         }
     }
 };
-
 // Событие создания комнаты
 const createRoomEvent = (roomName, userName, navigate, setCurrentRoomName, setHostName) => (data) => {
     console.log('Создание комнаты', {receivedData: data});
@@ -71,12 +69,12 @@ const createRoomEvent = (roomName, userName, navigate, setCurrentRoomName, setHo
 };
 
 // Событие подключения к комнате
-const joinRoomEvent = (roomName, userName, roomId, setDrawingData, setCurrentRoomName, setHostName, navigate) => (data) => {
+const joinRoomEvent = (roomName, userName, roomId, setCurrentRoomName, setHostName, navigate) => (data) => {
     console.log('Подключение к комнате', {receivedData: data});
 
     if (data.status === 'success') {
         const drawings = data.drawingData.map(d => JSON.parse(d));
-        setDrawingData(drawings);
+        store.dispatch(setDrawingData(drawings));
         console.log('Текущие данные рисования установлены', drawings);
         setCurrentRoomName(roomName);
         setHostName(data.hostName);
@@ -110,15 +108,15 @@ const unsubscribeFromEvents = (events) => {
 };
 
 // Создание комнаты
-export const createRoom = (userName, roomName, navigate, setDrawingData, setCurrentRoomName, setHostName, drawingData) => {
+export const createRoom = (userName, roomName, navigate, setCurrentRoomName, setHostName) => {
     if (isConnecting || isSocketConnected()) return;
     isConnecting = true;
 
     const events = {
-        requestDrawingData: commonEvents.requestDrawingData(userName, drawingData),
-        syncDrawingData: commonEvents.syncDrawingData(setDrawingData),
-        broadcastDrawingData: commonEvents.broadcastDrawingData(setDrawingData),
-        draw: commonEvents.draw(setDrawingData, roomName, userName),
+        requestDrawingData: commonEvents.requestDrawingData(userName),
+        syncDrawingData: commonEvents.syncDrawingData(),
+        broadcastDrawingData: commonEvents.broadcastDrawingData(),
+        draw: commonEvents.draw(roomName, userName),
         roomCreated: createRoomEvent(roomName, userName, navigate, setCurrentRoomName, setHostName)
     };
 
@@ -140,16 +138,16 @@ export const createRoom = (userName, roomName, navigate, setDrawingData, setCurr
     return () => unsubscribeFromEvents(events);
 };
 
-export const joinRoom = (userName, roomName, roomId, navigate, setDrawingData, setCurrentRoomName, setHostName, drawingData) => {
+export const joinRoom = (userName, roomName, roomId, navigate, setCurrentRoomName, setHostName) => {
     if (isConnecting || isSocketConnected()) return;
     isConnecting = true;
 
     const events = {
-        requestDrawingData: commonEvents.requestDrawingData(userName, drawingData),
-        syncDrawingData: commonEvents.syncDrawingData(setDrawingData),
-        broadcastDrawingData: commonEvents.broadcastDrawingData(setDrawingData),
-        draw: commonEvents.draw(setDrawingData, roomId, userName),
-        joinRoom: joinRoomEvent(roomName, userName, roomId, setDrawingData, setCurrentRoomName, setHostName, navigate)
+        requestDrawingData: commonEvents.requestDrawingData(userName),
+        syncDrawingData: commonEvents.syncDrawingData(),
+        broadcastDrawingData: commonEvents.broadcastDrawingData(),
+        draw: commonEvents.draw(roomId, userName),
+        joinRoom: joinRoomEvent(roomName, userName, roomId, setCurrentRoomName, setHostName, navigate)
     };
 
     subscribeToEvents(events);

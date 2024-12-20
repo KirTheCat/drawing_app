@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import {Box} from '@mui/material';
 import RoomInfo from '../components/RoomInfoComponent';
 import ToolsMenu from '../components/ToolsMenu';
@@ -26,9 +26,7 @@ function Room() {
         isConnected,
         stageRef
     } = useRoom();
-    useEffect(() => {
-        console.log('Данные рисования при подключении', drawingData);
-    }, [drawingData]);
+
     return (
         <Box sx={{display: 'flex', flexDirection: 'row', width: '100vw', height: '100vh', bgcolor: '#f5f5f5'}}>
             <Box sx={{

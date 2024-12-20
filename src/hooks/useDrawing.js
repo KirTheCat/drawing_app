@@ -1,16 +1,14 @@
-import {useState, useRef, useEffect} from 'react';
+import {useRef, useEffect} from 'react';
 import {debounce} from 'lodash';
+import {useDispatch, useSelector} from 'react-redux';
 import {off, on, sendMessage} from '../websocket/WebSocket';
 import {syncDrawingData} from '../websocket/websocketHandlers';
+import {setDrawingData, appendDrawingData} from '../redux/slicers/drawingSlice';
 
-const useDrawing = ({color, brushRadius, eraserActive, onDraw, isConnected, roomId, drawingData, userName}) => {
-    const [lines, setLines] = useState([]);
+const useDrawing = ({color, brushRadius, eraserActive, onDraw, isConnected, roomId, userName}) => {
+    const dispatch = useDispatch();
+    const lines = useSelector((state) => state.drawing.drawingData);
     const isDrawing = useRef(false);
-
-    useEffect(() => {
-        console.log('Инициализация данных рисования', drawingData);
-        setLines([...drawingData]);
-    }, [drawingData]);
 
     const debouncedSendMessage = debounce((message) => {
         sendMessage(message);
@@ -20,21 +18,23 @@ const useDrawing = ({color, brushRadius, eraserActive, onDraw, isConnected, room
         isDrawing.current = true;
         const stage = e.target.getStage();
         const point = stage.getPointerPosition();
-        setLines((prevLines) => [...prevLines, {
+        dispatch(appendDrawingData([{
             tool: eraserActive ? 'eraser' : 'pen',
             points: [point.x, point.y],
             color,
             brushRadius
-        }]);
+        }]));
     };
 
     const handleMouseMove = (e) => {
         if (!isDrawing.current) return;
         const stage = e.target.getStage();
         const point = stage.getPointerPosition();
-        const lastLine = lines[lines.length - 1];
-        lastLine.points = lastLine.points.concat([point.x, point.y]);
-        setLines([...lines]);
+        const newLines = [...lines];
+        const lastLine = {...newLines[newLines.length - 1]};
+        lastLine.points = [...lastLine.points, point.x, point.y];
+        newLines[newLines.length - 1] = lastLine;
+        dispatch(setDrawingData(newLines));
     };
 
     const handleMouseUp = () => {
@@ -50,39 +50,28 @@ const useDrawing = ({color, brushRadius, eraserActive, onDraw, isConnected, room
     useEffect(() => {
         if (isConnected) {
             syncDrawingData(roomId, lines, userName);
+            sendMessage({type: 'broadcastDrawingData', roomId, drawingData: JSON.stringify(lines)});
         }
-    }, [lines, isConnected, roomId, userName]);
+    }, [isConnected, roomId, userName]); // lines,
 
     useEffect(() => {
         const handleBroadcastDrawingData = (data) => {
             const drawing = JSON.parse(data.drawingData);
             if (drawing?.points) {
-                setLines((prevLines) => [...prevLines, drawing]);
-                console.log('Получены данные для трансляции рисования', drawing); // Лог для отладки
+                dispatch(appendDrawingData([drawing]));
+                console.log('Получены данные для трансляции рисования', drawing);
             }
         };
 
-        const handleJoinRoom = (data) => {
-            if (data.drawingData) {
-                const drawings = data.drawingData.map(d => JSON.parse(d));
-                setLines(drawings);
-                console.log('Данные рисования установлены при подключении к комнате', drawings); // Лог для отладки
-            }
-        };
-
-        // Подписка на события
         on('broadcastDrawingData', handleBroadcastDrawingData);
-        on('joinRoom', handleJoinRoom);
 
         return () => {
             off('broadcastDrawingData', handleBroadcastDrawingData);
-            off('joinRoom', handleJoinRoom);
         };
-    }, []);
+    }, [dispatch]);
 
     return {
         lines,
-        setLines,
         handleMouseDown,
         handleMouseMove,
         handleMouseUp
