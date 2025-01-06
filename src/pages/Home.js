@@ -1,8 +1,9 @@
+//Home.js
 import Form from "../components/Form";
-import {Box} from "@mui/material";
 import {useState} from "react";
 import {createRoom, joinRoom} from "../websocket/websocketHandlers";
 import {useNavigate} from "react-router-dom";
+import AnimatedBackground from "../components/AnimatedBackground";
 
 function Home() {
     const [userName, setUserName] = useState('');
@@ -25,16 +26,7 @@ function Home() {
 
 
     return (
-        <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            bgcolor: '#f5f5f5',
-            p: 2,
-            borderRadius: 2,
-            mt: 4,
-            margin: '0 auto'
-        }}>
+        <AnimatedBackground>
             <Form
                 isCreatingRoom={isCreatingRoom}
                 setIsCreatingRoom={setIsCreatingRoom}
@@ -46,7 +38,7 @@ function Home() {
                 setRoomId={setRoomId}
                 handleAction={isCreatingRoom ? handleCreateRoom : handleJoinRoom}
             />
-        </Box>
+        </AnimatedBackground>
     );
 }
 

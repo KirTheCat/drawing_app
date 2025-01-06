@@ -1,32 +1,25 @@
-// useRoom.js
-import {useEffect, useRef} from 'react';
+//useRoom.js
+import {useEffect, useRef, useState} from 'react';
 import {useLocation, useParams, useNavigate} from 'react-router-dom';
-import {useDispatch, useSelector} from 'react-redux';
-import {
-    setColor,
-    setBrushRadius,
-    setEraserActive,
-    setCurrentRoomName,
-    setHostName
-} from '../redux/slicers/drawingSlice';
 import useDrawing from '../hooks/useDrawing';
 import {createRoom, joinRoom} from '../websocket/websocketHandlers';
-import {closeSocket, sendMessage} from "../websocket/WebSocket";
+import {sendMessage} from "../websocket/WebSocket";
 
 function useRoom() {
     const {roomId} = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    const {userName, roomName, action} = location.state;
+    const {userName, action} = location.state;
 
-    const dispatch = useDispatch();
-    const color = useSelector((state) => state.drawing.color);
-    const brushRadius = useSelector((state) => state.drawing.brushRadius);
-    const eraserActive = useSelector((state) => state.drawing.eraserActive);
-    const drawingData = useSelector((state) => state.drawing.drawingData);
-    const currentRoomName = useSelector((state) => state.drawing.currentRoomName);
-    const hostName = useSelector((state) => state.drawing.hostName);
-    const isConnected = useSelector((state) => state.drawing.isConnected);
+    const [roomName, setRoomName] = useState(''); // Инициализируем null
+    const [hostName, setHostName] = useState(''); // Инициализируем null
+
+    const [color, setColor] = useState('#000000');
+    const [brushRadius, setBrushRadius] = useState(5);
+    const [eraserActive, setEraserActive] = useState(false);
+    const [drawingData, setDrawingData] = useState([]);
+    const [currentRoomName, setCurrentRoomName] = useState(roomName);
+    const [isConnected, setIsConnected] = useState(false);
     const stageRef = useRef(null);
 
     const {handleMouseDown, handleMouseMove, handleMouseUp} = useDrawing({
@@ -46,41 +39,47 @@ function useRoom() {
     });
 
     useEffect(() => {
+
+        const handleRoomData = (data) => { // Функция для установки данных комнаты
+            setRoomName(data.roomName);
+            setHostName(data.hostName);
+        };
+
         console.log('Подключение к комнате', {action, userName, roomName, roomId});
         const disconnect = action === 'create'
-            ? createRoom(userName, roomName, navigate, (name) => dispatch(setCurrentRoomName(name)), (name) => dispatch(setHostName(name)))
-            : joinRoom(userName, roomName, roomId, navigate, (name) => dispatch(setCurrentRoomName(name)), (name) => dispatch(setHostName(name)));
+            ? createRoom(userName, navigate, handleRoomData, drawingData)
+            : joinRoom(userName, roomId, navigate, handleRoomData, drawingData);
 
         return () => {
             if (typeof disconnect === 'function') {
                 disconnect();
             }
         };
-    }, [action, userName, roomName, roomId, navigate, dispatch]);
+    }, [action, userName, roomId, navigate, drawingData]);
+
     const handleLeaveRoom = () => {
         if (isConnected) {
             sendMessage({type: 'leaveRoom', roomId, userName});
             navigate('/');
-            closeSocket();
         }
     };
 
     return {
         userName,
         roomId,
-        currentRoomName,
+        currentRoomName: roomName,
         hostName,
         color,
-        setColor: (color) => dispatch(setColor(color)),
+        setColor,
         brushRadius,
-        setBrushRadius: (radius) => dispatch(setBrushRadius(radius)),
+        setBrushRadius,
         eraserActive,
-        setEraserActive: (active) => dispatch(setEraserActive(active)),
+        setEraserActive,
         drawingData,
         handleLeaveRoom,
-        handleMouseDown,
-        handleMouseMove,
         handleMouseUp,
+        handleMouseMove,
+        handleMouseDown,
         isConnected,
         stageRef
     };

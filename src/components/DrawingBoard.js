@@ -1,7 +1,6 @@
 // DrawingBoard.js
 import React from 'react';
 import {Stage, Layer} from 'react-konva';
-import {Box} from '@mui/material';
 import LineComponent from './LineComponent';
 import useDrawing from '../hooks/useDrawing';
 
@@ -10,7 +9,6 @@ const DrawingBoard = React.forwardRef(({
                                            brushRadius,
                                            eraserActive,
                                            drawingData,
-                                           onDraw,
                                            isConnected,
                                            roomId
                                        }, ref) => {
@@ -18,30 +16,19 @@ const DrawingBoard = React.forwardRef(({
         color,
         brushRadius,
         eraserActive,
-        onDraw,
         isConnected,
         roomId,
         drawingData
     });
 
     return (
-        <Box
-            sx={{
-                width: '100%',
-                height: '100%',
-                border: '1px solid #ccc',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-            }}
-        >
+        <div>
             <Stage
-                width={800}
-                height={900}
+                width={900}
+                height={700}
                 onMouseDown={handleMouseDown}
-                onMousemove={handleMouseMove}
-                onMouseup={handleMouseUp}
-                ref={ref}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
             >
                 <Layer>
                     {lines.map((line, i) => (
@@ -49,7 +36,7 @@ const DrawingBoard = React.forwardRef(({
                     ))}
                 </Layer>
             </Stage>
-        </Box>
+        </div>
     );
 });
 

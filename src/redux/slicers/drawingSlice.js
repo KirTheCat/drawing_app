@@ -1,3 +1,4 @@
+//drawingSlice.js
 import {createSlice} from '@reduxjs/toolkit';
 
 const drawingSlice = createSlice({

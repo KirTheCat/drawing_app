@@ -1,14 +1,16 @@
-import {useRef, useEffect} from 'react';
+//useDrawing.js
+import {useState, useRef, useEffect} from 'react';
 import {debounce} from 'lodash';
-import {useDispatch, useSelector} from 'react-redux';
 import {off, on, sendMessage} from '../websocket/WebSocket';
 import {syncDrawingData} from '../websocket/websocketHandlers';
-import {setDrawingData, appendDrawingData} from '../redux/slicers/drawingSlice';
 
-const useDrawing = ({color, brushRadius, eraserActive, onDraw, isConnected, roomId, userName}) => {
-    const dispatch = useDispatch();
-    const lines = useSelector((state) => state.drawing.drawingData);
+const useDrawing = ({color, brushRadius, eraserActive, isConnected, roomId, drawingData, userName}) => {
+    const [lines, setLines] = useState([]);
     const isDrawing = useRef(false);
+
+    useEffect(() => {
+        setLines(drawingData);
+    }, [drawingData]);
 
     const debouncedSendMessage = debounce((message) => {
         sendMessage(message);
@@ -18,60 +20,97 @@ const useDrawing = ({color, brushRadius, eraserActive, onDraw, isConnected, room
         isDrawing.current = true;
         const stage = e.target.getStage();
         const point = stage.getPointerPosition();
-        dispatch(appendDrawingData([{
+        setLines((prevLines) => [...prevLines, {
             tool: eraserActive ? 'eraser' : 'pen',
             points: [point.x, point.y],
             color,
             brushRadius
-        }]));
+        }]);
     };
 
+    // const handleMouseMove = (e) => {
+    //     if (!isDrawing.current) return;
+    //     const stage = e.target.getStage();
+    //     const point = stage.getPointerPosition();
+    //     const lastLine = lines[lines.length - 1];
+    //     lastLine.points = lastLine.points.concat([point.x, point.y]);
+    //     setLines([...lines]);
+    // };
     const handleMouseMove = (e) => {
         if (!isDrawing.current) return;
         const stage = e.target.getStage();
         const point = stage.getPointerPosition();
-        const newLines = [...lines];
-        const lastLine = {...newLines[newLines.length - 1]};
-        lastLine.points = [...lastLine.points, point.x, point.y];
-        newLines[newLines.length - 1] = lastLine;
-        dispatch(setDrawingData(newLines));
+        setLines((prevLines) => {
+            const lastLine = prevLines[prevLines.length - 1];
+            if (lastLine) {
+                lastLine.points = lastLine.points.concat([point.x, point.y]);
+            }
+            return [...prevLines];
+        });
     };
-
+    // const handleMouseUp = () => {
+    //     isDrawing.current = false;
+    //     const lastLine = lines[lines.length - 1];
+    //     if (lastLine && lastLine.points.length > 0) {
+    //         debouncedSendMessage({type: 'draw', roomId, drawingData: JSON.stringify(lastLine)});
+    //         // sendMessage({type: 'broadcastDrawingData', roomId, drawingData: JSON.stringify(lastLine)});
+    //     }
+    // };
     const handleMouseUp = () => {
         isDrawing.current = false;
-        const lastLine = lines[lines.length - 1];
-        if (lastLine && lastLine.points.length > 0) {
-            debouncedSendMessage({type: 'draw', roomId, drawingData: JSON.stringify(lastLine)});
-            onDraw(lastLine);
-            sendMessage({type: 'broadcastDrawingData', roomId, drawingData: JSON.stringify(lastLine)});
+        if (lines.length > 0) {
+            debouncedSendMessage({type: 'draw', roomId, drawingData: JSON.stringify(lines)});
         }
     };
-
     useEffect(() => {
         if (isConnected) {
             syncDrawingData(roomId, lines, userName);
-            sendMessage({type: 'broadcastDrawingData', roomId, drawingData: JSON.stringify(lines)});
         }
-    }, [isConnected, roomId, userName]); // lines,
+    }, [lines, isConnected, roomId, userName]);
 
     useEffect(() => {
         const handleBroadcastDrawingData = (data) => {
-            const drawing = JSON.parse(data.drawingData);
-            if (drawing?.points) {
-                dispatch(appendDrawingData([drawing]));
-                console.log('Получены данные для трансляции рисования', drawing);
+            try {
+                const receivedLines = JSON.parse(data.drawingData);
+                setLines(prevLines => [...prevLines, ...receivedLines]);
+                console.log('Получены данные для трансляции рисования', receivedLines);
+            } catch (error) {
+                console.error("Ошибка парсинга JSON:", error, data.drawingData);
             }
         };
 
+        const handleJoinRoom = (data) => {
+            let drawings = [];
+            if (data.drawingData) {
+                drawings = data.drawingData.map(d => {
+                    try {
+                        return typeof d === 'string' ? JSON.parse(d) : d;
+                    } catch (error) {
+                        console.error("Ошибка парсинга JSON в handleJoinRoom:", error, d);
+                        return null;
+                    }
+                }).filter(Boolean);
+                setLines(drawings);
+                console.log('Данные рисования установлены при подключении к комнате', drawings);
+            } else {
+                setLines([]);
+                console.log("Нет данных для рисования при подключении к комнате");
+            }
+        };
+
+
         on('broadcastDrawingData', handleBroadcastDrawingData);
+        on('joinRoom', handleJoinRoom);
 
         return () => {
             off('broadcastDrawingData', handleBroadcastDrawingData);
+            off('joinRoom', handleJoinRoom);
         };
-    }, [dispatch]);
+    }, []);
 
     return {
         lines,
+        setLines,
         handleMouseDown,
         handleMouseMove,
         handleMouseUp

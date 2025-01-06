@@ -20,7 +20,7 @@ const commonEvents = {
 
         if (data.userName !== userName) {
             const drawingData = store.getState().drawing.drawingData;
-            syncDrawingData(data.roomId, drawingData, userName);
+            syncDrawingData(data.roomId, drawingData, data.userName);
         }
     },
 
@@ -30,26 +30,24 @@ const commonEvents = {
         store.dispatch(appendDrawingData(drawings));
     },
 
-    broadcastDrawingData: () => (data) => {
-        console.log('Трансляция данных рисования', {receivedData: data});
-
-        const drawing = JSON.parse(data.drawingData);
-        if (drawing?.points) {
-            store.dispatch(appendDrawingData([drawing]));
+    draw: () => (data) => {
+        try {
+            const receivedLines = JSON.parse(data.drawingData);
+            store.dispatch(setDrawingData(receivedLines));
+            console.log('Получены данные рисования', receivedLines);
+        } catch (error) {
+            console.error("Ошибка парсинга JSON:", error, data.drawingData);
         }
     },
-
-    draw: (roomId, userName) => (data) => {
-        console.log('Получение данных рисования', {receivedData: data});
-
-        const drawing = JSON.parse(data.drawingData);
-        if (drawing?.points) {
-            store.dispatch(appendDrawingData([drawing]));
-            syncDrawingData(roomId, store.getState().drawing.drawingData, userName);
-            // Трансляция данных рисования другим пользователям
-            sendMessage({type: 'broadcastDrawingData', roomId, drawingData: JSON.stringify(drawing)});
+    broadcastDrawingData: () => (data) => {
+        try {
+            const receivedLines = JSON.parse(data.drawingData);
+            store.dispatch(setDrawingData(receivedLines));
+            console.log('Получены данные для трансляции рисования', receivedLines);
+        } catch (error) {
+            console.error("Ошибка парсинга JSON:", error, data.drawingData);
         }
-    }
+    },
 };
 // Событие создания комнаты
 const createRoomEvent = (roomName, userName, navigate, setCurrentRoomName, setHostName) => (data) => {

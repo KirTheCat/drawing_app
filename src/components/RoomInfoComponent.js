@@ -16,7 +16,7 @@ function RoomInfoComponent({userName, roomId, currentRoomName, hostName}) {
                 Хост: {hostName}
             </Typography>
             <Typography variant="subtitle1" gutterBottom>
-                Вы авторизованы,как: {userName}
+                Вы авторизованы как: {userName}
             </Typography>
         </Box>
     );
