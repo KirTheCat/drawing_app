@@ -1,16 +1,16 @@
-//drawingSlice.js
 import {createSlice} from '@reduxjs/toolkit';
 
 const drawingSlice = createSlice({
     name: 'drawing',
     initialState: {
-        color: '#000000',
+        color: {r: 0, g: 0, b: 0},
         brushRadius: 5,
         eraserActive: false,
         drawingData: [],
-        currentRoomName: '',
-        hostName: '',
         isConnected: false,
+        roomName: '',
+        hostName: '',
+        fillActive: false,
     },
     reducers: {
         setColor: (state, action) => {
@@ -26,27 +26,30 @@ const drawingSlice = createSlice({
             state.drawingData = action.payload;
         },
         appendDrawingData: (state, action) => {
-            state.drawingData = [...state.drawingData, ...action.payload];
+            state.drawingData.push(action.payload);
         },
-        setCurrentRoomName: (state, action) => {
+        setIsConnected: (state, action) => {
+            state.isConnected = action.payload;
+        },
+        setRoomName: (state, action) => {
             state.currentRoomName = action.payload;
         },
         setHostName: (state, action) => {
             state.hostName = action.payload;
         },
-        setIsConnected: (state, action) => {
-            state.isConnected = action.payload;
-        },
+
     },
 });
+
 export const {
     setColor,
     setBrushRadius,
     setEraserActive,
     setDrawingData,
-    setCurrentRoomName,
-    setHostName,
     setIsConnected,
-    appendDrawingData
+    appendDrawingData,
+    setRoomName,
+    setHostName,
 } = drawingSlice.actions;
+
 export default drawingSlice.reducer;

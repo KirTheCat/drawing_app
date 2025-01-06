@@ -13,6 +13,16 @@ export const syncDrawingData = (roomId, drawingData, userName) => {
     });
 };
 
+const handleBroadcastDrawingData = (data) => {
+    try {
+        const receivedLines = JSON.parse(data.drawingData);
+        store.dispatch(setDrawingData(receivedLines));
+        console.log('Получены данные для трансляции рисования', receivedLines);
+    } catch (error) {
+        console.error("Ошибка парсинга JSON:", error, data.drawingData);
+    }
+};
+
 // Общие события
 const commonEvents = {
     requestDrawingData: (userName) => (data) => {
