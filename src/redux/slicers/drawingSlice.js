@@ -7,9 +7,6 @@ const drawingSlice = createSlice({
         brushRadius: 5,
         eraserActive: false,
         drawingData: [],
-        isConnected: false,
-        roomName: '',
-        hostName: '',
         fillActive: false,
     },
     reducers: {
@@ -28,16 +25,6 @@ const drawingSlice = createSlice({
         appendDrawingData: (state, action) => {
             state.drawingData.push(action.payload);
         },
-        setIsConnected: (state, action) => {
-            state.isConnected = action.payload;
-        },
-        setRoomName: (state, action) => {
-            state.currentRoomName = action.payload;
-        },
-        setHostName: (state, action) => {
-            state.hostName = action.payload;
-        },
-
     },
 });
 
@@ -46,10 +33,7 @@ export const {
     setBrushRadius,
     setEraserActive,
     setDrawingData,
-    setIsConnected,
     appendDrawingData,
-    setRoomName,
-    setHostName,
 } = drawingSlice.actions;
 
 export default drawingSlice.reducer;

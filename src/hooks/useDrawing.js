@@ -2,7 +2,6 @@
 import {useState, useRef, useEffect} from 'react';
 import {debounce} from 'lodash';
 import {sendMessage} from '../websocket/WebSocket';
-import {syncDrawingData} from '../websocket/websocketHandlers';
 
 const useDrawing = ({color, brushRadius, eraserActive, isConnected, roomId, drawingData, userName}) => {
     const [lines, setLines] = useState([]);
@@ -47,12 +46,6 @@ const useDrawing = ({color, brushRadius, eraserActive, isConnected, roomId, draw
             debouncedSendMessage({type: 'draw', roomId, drawingData: JSON.stringify(lines)});
         }
     };
-    useEffect(() => {
-        if (isConnected) {
-            syncDrawingData(roomId, lines, userName);
-        }
-    }, [lines, isConnected, roomId, userName]);
-
 
     return {
         lines,

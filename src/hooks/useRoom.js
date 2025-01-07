@@ -1,87 +1,79 @@
-//useRoom.js
-import {useEffect, useRef, useState} from 'react';
+import {useEffect} from 'react';
 import {useLocation, useParams, useNavigate} from 'react-router-dom';
-import useDrawing from '../hooks/useDrawing';
+import {useSelector, useDispatch} from 'react-redux';
 import {createRoom, joinRoom} from '../websocket/websocketHandlers';
 import {sendMessage} from "../websocket/WebSocket";
+import {
+    setColor,
+    setBrushRadius,
+    setEraserActive,
+} from '../redux/slicers/drawingSlice';
+import {
+    setHostName,
+    setRoomId,
+    setUserName,
+    setIsConnected
+} from '../redux/slicers/roomSlice'
 
 function useRoom() {
+    const dispatch = useDispatch();
     const {roomId} = useParams();
     const location = useLocation();
     const navigate = useNavigate();
     const {userName, action} = location.state;
 
-    const [roomName, setRoomName] = useState(''); // Инициализируем null
-    const [hostName, setHostName] = useState(''); // Инициализируем null
+    const color = useSelector((state) => state.drawing.color);
+    const brushRadius = useSelector((state) => state.drawing.brushRadius);
+    const eraserActive = useSelector((state) => state.drawing.eraserActive);
+    const drawingData = useSelector((state) => state.drawing.drawingData);
 
-    const [color, setColor] = useState('#000000');
-    const [brushRadius, setBrushRadius] = useState(5);
-    const [eraserActive, setEraserActive] = useState(false);
-    const [drawingData, setDrawingData] = useState([]);
-    const [currentRoomName, setCurrentRoomName] = useState(roomName);
-    const [isConnected, setIsConnected] = useState(false);
-    const stageRef = useRef(null);
-
-    const {handleMouseDown, handleMouseMove, handleMouseUp} = useDrawing({
-        color,
-        brushRadius,
-        eraserActive,
-        onDraw: (lastLine) => {
-            if (isConnected) {
-                console.log('Отправка данных рисования', {lastLine});
-                sendMessage({type: 'draw', roomId, drawingData: JSON.stringify(lastLine)});
-            }
-        },
-        isConnected,
-        roomId,
-        drawingData,
-        userName
-    });
+    const roomName = useSelector((state) => state.room.roomName);
+    const hostName = useSelector((state) => state.room.hostName);
+    const isConnected = useSelector((state) => state.room.isConnected);
 
     useEffect(() => {
+        dispatch(setUserName(userName));
+        dispatch(setRoomId(roomId));
+    }, [dispatch, roomId, userName])
 
-        const handleRoomData = (data) => { // Функция для установки данных комнаты
-            setRoomName(data.roomName);
-            setHostName(data.hostName);
+    useEffect(() => {
+        const handleRoomData = (data) => {
+            dispatch(setHostName(data.hostName));
+            dispatch(setIsConnected(true))
         };
 
-        console.log('Подключение к комнате', {action, userName, roomName, roomId});
         const disconnect = action === 'create'
-            ? createRoom(userName, navigate, handleRoomData, drawingData)
-            : joinRoom(userName, roomId, navigate, handleRoomData, drawingData);
+            ? createRoom(userName, roomId, navigate, handleRoomData, drawingData)
+            : joinRoom(userName, roomName, roomId, navigate, handleRoomData, drawingData);
 
         return () => {
             if (typeof disconnect === 'function') {
                 disconnect();
             }
         };
-    }, [action, userName, roomId, navigate, drawingData]);
+    }, [dispatch, roomName, action, userName, roomId, navigate, drawingData]);
 
     const handleLeaveRoom = () => {
-        if (isConnected) {
-            sendMessage({type: 'leaveRoom', roomId, userName});
-            navigate('/');
-        }
+
+        dispatch(setIsConnected(false));
+        navigate('/', {replace: true});
     };
 
     return {
         userName,
         roomId,
-        currentRoomName: roomName,
+        roomName,
         hostName,
         color,
-        setColor,
+        setColor: (c) => dispatch(setColor(c)),
         brushRadius,
-        setBrushRadius,
+        setBrushRadius: (r) => dispatch(setBrushRadius(r)),
         eraserActive,
-        setEraserActive,
+        setEraserActive: (e) => dispatch(setEraserActive(e)),
         drawingData,
+        navigate,
         handleLeaveRoom,
-        handleMouseUp,
-        handleMouseMove,
-        handleMouseDown,
         isConnected,
-        stageRef
     };
 }
 

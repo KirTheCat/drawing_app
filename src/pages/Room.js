@@ -6,29 +6,24 @@ import ToolsMenu from '../components/ToolsMenu';
 import DrawingBoard from '../components/DrawingBoard';
 import LeaveButton from '../components/LeaveButton';
 import useRoom from '../hooks/useRoom';
-import {useSelector} from "react-redux";
 
 const Room = forwardRef((props, ref) => {
     const {
-        userName,
-        roomId,
-        currentRoomName,
-        hostName,
         color,
         setColor,
         brushRadius,
         setBrushRadius,
         eraserActive,
         setEraserActive,
-        fillActive,
-        setFillActive,
-        isConnected,
-        stageRef,
+        drawingData,
+        navigate,
         handleLeaveRoom,
+        isConnected,
+        userName,
+        roomId,
+        currentRoomName,
+        hostName
     } = useRoom();
-
-    const drawingData = useSelector((state) => state.drawing.drawingData);
-
 
     return (
         <Box sx={{display: 'flex', height: '100vh'}} ref={ref}>
@@ -60,19 +55,19 @@ const Room = forwardRef((props, ref) => {
                         setBrushRadius={setBrushRadius}
                         eraserActive={eraserActive}
                         setEraserActive={setEraserActive}
-                        fillActive={fillActive}
-                        setFillActive={setFillActive}
+                        // fillActive={fillActive}
+                        // setFillActive={setFillActive}
                     />
                     <LeaveButton handleLeaveRoom={handleLeaveRoom}/>
                 </Box>
             </Box>
             <Box sx={{flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px'}}>
                 <DrawingBoard
-                    ref={stageRef}
+                    ref={ref}
                     color={color}
                     brushRadius={brushRadius}
                     eraserActive={eraserActive}
-                    fillActive={fillActive}
+                    // fillActive={fillActive}
                     drawingData={drawingData}
                     isConnected={isConnected}
                     roomId={roomId}

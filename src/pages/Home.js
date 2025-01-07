@@ -1,29 +1,38 @@
-//Home.js
-import Form from "../components/Form";
-import {useState} from "react";
-import {createRoom, joinRoom} from "../websocket/websocketHandlers";
-import {useNavigate} from "react-router-dom";
-import AnimatedBackground from "../components/AnimatedBackground";
+import React, {useState} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
+import {useNavigate} from 'react-router-dom';
+import Form from '../components/Form';
+import AnimatedBackground from '../components/AnimatedBackground';
+import {createRoom, joinRoom} from '../websocket/websocketHandlers';
+import {setRoomName, setUserName} from "../redux/slicers/roomSlice";
 
 function Home() {
-    const [userName, setUserName] = useState('');
-    const [roomName, setRoomName] = useState('');
+    const userName = useSelector(state => state.room.userName);
+    const roomName = useSelector(state => state.room.roomName);
     const [roomId, setRoomId] = useState('');
     const [isCreatingRoom, setIsCreatingRoom] = useState(true);
-    const [drawingData, setDrawingData] = useState([]);
-    const [currentRoomName, setCurrentRoomName] = useState('');
-    const [hostName, setHostName] = useState('');
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const handleCreateRoom = () => createRoom(userName, roomName, navigate, setDrawingData, setCurrentRoomName, setHostName, drawingData);
+    const handleCreateRoom = () => {
+        createRoom(userName, roomName, navigate, dispatch);
+    };
+
     const handleJoinRoom = () => {
         if (roomId && roomId.trim() !== '') {
-            joinRoom(userName, roomName, roomId, navigate, setDrawingData, setCurrentRoomName, setHostName);
+            joinRoom(userName, roomName, roomId, navigate, dispatch);
         } else {
             alert('Введите корректный ID комнаты');
         }
     };
 
+    const handleUserNameChange = (event) => {
+        dispatch(setUserName(event.target.value));
+    };
+
+    const handleRoomNameChange = (event) => {
+        dispatch(setRoomName(event.target.value));
+    };
 
     return (
         <AnimatedBackground>
@@ -31,9 +40,9 @@ function Home() {
                 isCreatingRoom={isCreatingRoom}
                 setIsCreatingRoom={setIsCreatingRoom}
                 userName={userName}
-                setUserName={setUserName}
+                setUserName={handleUserNameChange}
                 roomName={roomName}
-                setRoomName={setRoomName}
+                setRoomName={handleRoomNameChange}
                 roomId={roomId}
                 setRoomId={setRoomId}
                 handleAction={isCreatingRoom ? handleCreateRoom : handleJoinRoom}

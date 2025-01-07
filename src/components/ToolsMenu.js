@@ -11,7 +11,7 @@ function ToolsMenu({
                        eraserActive,
                        setEraserActive,
                        fillActive,
-                       setFillActive
+                       // setFillActive
                    }) {
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%'}}>
@@ -39,7 +39,7 @@ function ToolsMenu({
                     color={!eraserActive && !fillActive ? "primary" : "default"}
                     onClick={() => {
                         setEraserActive(false);
-                        setFillActive(false);
+                        // setFillActive(false);
                     }}
                     sx={{
                         width: 'calc(100% / 3)',
@@ -53,12 +53,13 @@ function ToolsMenu({
                     <Avatar src="/img/drawIcon.png" alt="Рисование" sx={{width: '40px', height: '40px'}}
                             variant="square"/>
                 </IconButton>
+                //СТЁРКА
                 <IconButton
                     variant="contained"
                     color={eraserActive ? "secondary" : "default"}
                     onClick={() => {
                         setEraserActive(true);
-                        setFillActive(false);
+                        // setFillActive(false);
                     }}
                     sx={{
                         width: 'calc(100% / 3)',
@@ -72,11 +73,12 @@ function ToolsMenu({
                     <Avatar src="/img/eraseIcon.png" alt="Стирание" sx={{width: '40px', height: '40px'}}
                             variant="square"/>
                 </IconButton>
+                //ЗАЛИВКА
                 <IconButton
                     variant="contained"
                     color={fillActive ? "secondary" : "default"}
                     onClick={() => {
-                        setFillActive(true);
+                        // setFillActive(true);
                         setEraserActive(false);
                     }}
                     sx={{

@@ -43,7 +43,7 @@ const Form = ({
                     <TextField
                         label="Введите ваше имя"
                         value={userName}
-                        onChange={(e) => setUserName(e.target.value)}
+                        onChange={setUserName}
                         fullWidth
                         margin="normal"
                         variant="outlined"
@@ -53,7 +53,7 @@ const Form = ({
                         <TextField
                             label="Введите название комнаты"
                             value={roomName}
-                            onChange={(e) => setRoomName(e.target.value)}
+                            onChange={setRoomName}
                             fullWidth
                             margin="normal"
                             variant="outlined"

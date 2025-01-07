@@ -3,15 +3,16 @@ import React from 'react';
 import {Stage, Layer} from 'react-konva';
 import LineComponent from './LineComponent';
 import useDrawing from '../hooks/useDrawing';
+import {useSelector} from "react-redux";
 
-const DrawingBoard = React.forwardRef(({
-                                           color,
-                                           brushRadius,
-                                           eraserActive,
-                                           drawingData,
-                                           isConnected,
-                                           roomId
-                                       }, ref) => {
+const DrawingBoard = React.forwardRef((props, ref) => {
+    const color = useSelector((state) => state.drawing.color);
+    const brushRadius = useSelector((state) => state.drawing.brushRadius);
+    const eraserActive = useSelector((state) => state.drawing.eraserActive);
+    const drawingData = useSelector((state) => state.drawing.drawingData);
+    const isConnected = useSelector((state) => state.room.isConnected)
+    const roomId = useSelector(state => state.room.roomId)
+
     const {lines, handleMouseDown, handleMouseMove, handleMouseUp} = useDrawing({
         color,
         brushRadius,
@@ -29,6 +30,7 @@ const DrawingBoard = React.forwardRef(({
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
+                style={{border: '1px solid black'}}
             >
                 <Layer>
                     {lines.map((line, i) => (
